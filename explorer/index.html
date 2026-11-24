@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipeline Build Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#111821; --panel:#1B2531; --panel2:#233040; --line:#34475A; --text:#F4F6F8; --muted:#A9B6C3; --orange:#FF9900; --green:#46D39A; }
+* { box-sizing:border-box; margin:0; padding:0; }
+html,body { height:100%; background:#0B1016; overflow:hidden; font-family:Geist,system-ui,sans-serif; color:var(--text); }
+#wrap { position:absolute; left:0; top:0; width:1080px; height:1350px; transform-origin:0 0; }
+#stage { position:relative; width:1080px; height:1350px; background:var(--bg); padding:44px 44px 0; overflow:hidden; }
+.kicker { font:600 25px 'Geist Mono',monospace; letter-spacing:.09em; color:var(--orange); }
+h1 { font:400 72px/1.02 'Instrument Serif',serif; letter-spacing:-.015em; margin:10px 0 24px; }
+.kpis { display:grid; grid-template-columns:1.1fr 1fr .8fr .9fr; gap:12px; }
+.kpi { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:14px 18px 12px; }
+.kpi span { display:block; font-size:22px; color:var(--muted); }
+.kpi b { display:block; font:600 46px/1.15 Geist,sans-serif; font-variant-numeric:tabular-nums; }
+.kpi.good b { color:var(--green); }
+.rail { display:grid; grid-template-columns:1fr 34px 1fr 34px 1fr; align-items:center; margin:16px 0 12px; }
+.env { height:58px; border-radius:8px; border:2px solid var(--line); display:flex; align-items:center; justify-content:center; gap:12px; font:600 27px 'Geist Mono',monospace; color:var(--muted); letter-spacing:.05em; }
+.env small { font:500 18px 'Geist Mono',monospace; letter-spacing:0; opacity:.82; }
+.env.active { border-color:var(--orange); color:#fff; background:#33280F; }
+.env.done { border-color:var(--green); color:var(--green); background:#12322A; }
+.chev { text-align:center; color:var(--muted); font-size:27px; }
+.steps { display:grid; grid-template-columns:.8fr 1.35fr 1.25fr 1fr; gap:8px; margin-bottom:14px; }
+.step { height:50px; border-radius:6px; background:var(--panel); color:var(--muted); display:flex; align-items:center; justify-content:center; font-size:25px; font-weight:600; }
+.step.on { background:var(--orange); color:#17120A; }
+.step.past { background:#174337; color:var(--green); }
+.layer { display:grid; grid-template-columns:178px 1fr; gap:10px; height:147px; margin-bottom:7px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel); opacity:.62; }
+.layer.active { border:2px solid var(--orange); opacity:1; background:#272417; padding:7px 9px; }
+.layer.done { opacity:1; border-color:#2F6655; }
+.layer h2 { font-size:26px; font-weight:600; line-height:1.05; margin-top:14px; }
+.layer small { display:block; margin-top:7px; font-size:22px; color:var(--muted); line-height:1.15; }
+.layer.done small { color:var(--green); }
+.layer.active small { color:var(--orange); }
+.tiles { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+.tile { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:7px; border-radius:6px; cursor:pointer; background:none; border:0; color:inherit; font:inherit; min-width:0; }
+.tile img { width:68px; height:68px; border-radius:6px; filter:grayscale(1) brightness(.62); opacity:.48; }
+.tile em { font-style:normal; margin-top:6px; font-size:22px; font-weight:500; color:var(--muted); white-space:nowrap; }
+.tile i { position:absolute; top:0; right:calc(50% - 56px); min-width:32px; height:32px; padding:0 6px; border-radius:16px; background:var(--green); color:#07231A; font:700 22px/32px Geist,sans-serif; text-align:center; font-style:normal; display:none; }
+.tile.on img { filter:none; opacity:1; }
+.tile.on em { color:var(--text); }
+.tile.on i { display:block; }
+.tile.fresh { background:rgba(255,153,0,.17); }
+.foot { position:absolute; left:44px; right:44px; bottom:17px; display:flex; justify-content:space-between; font-size:22px; color:var(--muted); }
+#finish { position:absolute; inset:0; background:#0B1016; padding:48px 60px; display:flex; flex-direction:column; justify-content:center; opacity:0; pointer-events:none; }
+#finish .kicker { margin-bottom:16px; }
+#finish h3 { font:400 84px/1.02 'Instrument Serif',serif; letter-spacing:-.015em; margin-bottom:30px; }
+.big { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.big div { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:18px 24px; }
+.big b { display:block; font-size:60px; line-height:1.05; font-weight:700; color:var(--orange); }
+.big .g { color:var(--green); }
+.big span { display:block; margin-top:4px; font-size:27px; color:#D7DEE5; }
+.ctl { display:grid; grid-template-columns:200px 1fr; gap:18px; align-items:center; padding:17px 4px; border-bottom:1px solid var(--line); }
+.ctl b { font-size:30px; font-weight:700; color:var(--green); }
+.ctl span { font-size:29px; line-height:1.22; color:var(--text); }
+#controls { margin-top:18px; }
+#finish p { margin-top:22px; font-size:27px; line-height:1.3; color:var(--muted); }
+#bar { position:fixed; left:0; right:0; bottom:0; height:54px; background:#0B1016; border-top:1px solid var(--line); display:flex; gap:12px; align-items:center; padding:0 14px; z-index:5; }
+#bar button { background:var(--orange); color:#17120A; border:0; border-radius:5px; font:600 15px Geist,sans-serif; padding:8px 16px; cursor:pointer; min-width:78px; }
+#bar input { flex:1; accent-color:var(--orange); }
+#bar output { font:500 14px 'Geist Mono',monospace; color:var(--muted); min-width:112px; text-align:right; }
+#modal { position:fixed; inset:0; background:rgba(5,8,12,.72); display:none; align-items:center; justify-content:center; z-index:9; padding:20px; }
+#modal.open { display:flex; }
+#sheet { width:min(620px,100%); max-height:80vh; overflow:auto; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:22px; }
+#sheet h4 { font-size:22px; margin-bottom:4px; }
+#sheet p { color:var(--muted); font-size:14px; margin-bottom:12px; }
+#sheet code { display:block; font:500 13px/1.7 'Geist Mono',monospace; overflow-wrap:anywhere; border-top:1px solid var(--line); padding:3px 0; }
+#sheet button { margin-top:14px; background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:5px; padding:7px 14px; cursor:pointer; }
+body.capture #bar { display:none; }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <div class="kicker">NO AWS ACCOUNT · NO AWS BILL</div>
+  <h1>An enterprise-style IaC pipeline, on a free AWS emulator</h1>
+  <div class="kpis">
+    <div class="kpi"><span>Resources built</span><b id="k-res">0</b></div>
+    <div class="kpi"><span>Build time</span><b id="k-time">00:00</b></div>
+    <div class="kpi good"><span>AWS spend</span><b>$0</b></div>
+    <div class="kpi good"><span>AWS account</span><b>None</b></div>
+  </div>
+  <div class="rail" id="rail"></div>
+  <div class="steps" id="steps"></div>
+  <div id="layers"></div>
+  <div class="foot"><span id="f-speed">Replay of a real build, sped up</span><span>Org guardrails: tested with mocks</span></div>
+  <div id="finish">
+    <div class="kicker">EMPTY TO THREE ENVIRONMENTS</div>
+    <h3>Enterprise-style delivery, tested for free.</h3>
+    <div class="big">
+      <div><b id="x-res">0</b><span>AWS resources</span></div>
+      <div><b id="x-time">0</b><span>real build time</span></div>
+      <div><b class="g">$0</b><span>AWS spend</span></div>
+      <div><b class="g" id="x-clean"></b><span>stacks clean on re-plan</span></div>
+    </div>
+    <div id="controls">
+      <div class="ctl"><b>Delete gate</b><span id="e-gate"></span></div>
+      <div class="ctl"><b>State</b><span id="e-state"></span></div>
+      <div class="ctl"><b>Backups</b><span id="e-backup"></span></div>
+      <div class="ctl"><b>Drift</b><span id="e-drift"></span></div>
+    </div>
+    <p>Real IAM, quotas and cost still need real AWS.</p>
+  </div>
+</div></div>
+<div id="bar"><button id="play">Pause</button><input id="seek" type="range" min="0" step="0.1" aria-label="Build timeline"><output id="clock"></output></div>
+<div id="modal"><div id="sheet"><h4 id="m-title"></h4><p id="m-sub"></p><div id="m-list"></div><button id="m-close">Close</button></div></div>
+<script src="data.js"></script>
+<script>
+const D = window.DATA, STEPS = [['plan','Plan'],['policy','Policy + delete gate'],['apply','Apply + record'],['smoke','Smoke test']], SHORT = {plan:'Plan',policy:'Policy gate',apply:'Apply',smoke:'Smoke test'};
+const $ = id => document.getElementById(id);
+const fmt = s => { s = Math.max(0, Math.floor(s)); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+const human = s => Math.floor(s / 60) + ' min ' + Math.round(s % 60) + ' s';
+D.envs.forEach((e, i) => { $('rail').insertAdjacentHTML('beforeend', (i ? '<div class="chev">→</div>' : '') + `<div class="env" id="env-${i}"></div>`); });
+STEPS.forEach(([k, l]) => $('steps').insertAdjacentHTML('beforeend', `<div class="step" id="s-${k}">${l}</div>`));
+D.layers.forEach((l, li) => {
+  $('layers').insertAdjacentHTML('beforeend', `<section class="layer" id="l-${li}"><div><h2>${l.label}</h2><small id="c-${li}">Waiting</small></div><div class="tiles">` +
+    l.tiles.map((t, ti) => `<button class="tile" id="t-${li}-${ti}" data-l="${li}" data-t="${ti}" aria-label="${t.name}"><img alt="" src="${t.icon}"><em>${t.name}</em><i></i></button>`).join('') + '</div></section>');
+});
+$('x-res').textContent = D.resources; $('x-time').textContent = human(D.total);
+const X = D.evidence;
+$('x-clean').textContent = X.replan_clean + ' / 15';
+$('e-gate').textContent = `Refused a prod VPC replacement: ${X.delete_gate.denied} protected resources`;
+$('e-state').textContent = `${X.state.allowed} databases, ${X.state.allowed} roles. ${X.state.refused} of ${X.state.refused} cross-environment logins refused`;
+$('e-backup').textContent = `${X.backups.verified} state databases dumped and verified`;
+$('e-drift').textContent = `${X.drift.clean} of 15 stacks clean`;
+$('f-speed').textContent = `Replay of a real build at ${X.commit}, sped up`;
+let current = { env: 0 };
+function envAt(t) { for (let i = 0; i < D.envs.length; i++) if (t < D.envs[i].end) return i; return D.envs.length - 1; }
+window.renderAt = function (t, finish = 0) {
+  t = Math.min(t, D.total);
+  const ei = envAt(t), env = D.envs[ei]; current.env = ei;
+  let built = 0;
+  D.envs.forEach((e, i) => { const n = $('env-' + i), done = t >= e.end; n.className = 'env' + (done ? ' done' : i === ei ? ' active' : ''); n.innerHTML = e.name.toUpperCase() + (done ? ' ✓' : '') + '<small>tfstate_' + e.name + '</small>'; e.stacks.forEach(s => { if (t >= s.steps.apply[1]) built += s.count; }); });
+  $('k-res').textContent = built; $('k-time').textContent = fmt(t);
+  let activeStep = null, activeStack = -1;
+  env.stacks.forEach((s, i) => { if (activeStack < 0 && t < s.steps.smoke[1]) activeStack = i; });
+  if (activeStack >= 0) { const s = env.stacks[activeStack]; for (const [k] of STEPS) if (t < s.steps[k][1]) { activeStep = k; break; } }
+  let passed = true;
+  STEPS.forEach(([k]) => { const n = $('s-' + k); if (k === activeStep) { n.className = 'step on'; passed = false; } else n.className = 'step' + (passed && activeStack >= 0 ? ' past' : ''); if (activeStack < 0) n.className = 'step past'; });
+  let lastInv = null;
+  env.stacks.forEach((s, i) => {
+    const done = t >= s.steps.smoke[1], active = i === activeStack, applied = t >= s.steps.apply[1];
+    if (applied) lastInv = s.inv;
+    $('l-' + i).className = 'layer' + (done ? ' done' : active ? ' active' : '');
+    $('c-' + i).textContent = done ? s.count + ' built' : active ? (SHORT[activeStep] || '') : 'Waiting';
+  });
+  D.layers.forEach((l, li) => l.tiles.forEach((tile, ti) => {
+    const n = $(`t-${li}-${ti}`), c = lastInv ? lastInv[tile.key] || 0 : 0;
+    const ownApply = env.stacks[li].steps.apply[1], fresh = t >= ownApply && t < ownApply + 12;
+    n.className = 'tile' + (c > 0 ? ' on' : '') + (c > 0 && fresh ? ' fresh' : '');
+    n.querySelector('i').textContent = c;
+  }));
+  $('finish').style.opacity = finish;
+  $('finish').style.pointerEvents = finish > .5 ? 'auto' : 'none';
+};
+function fit() { const cap = document.body.classList.contains('capture'), h = innerHeight - (cap ? 0 : 54), k = Math.min(innerWidth / 1080, h / 1350); $('wrap').style.transform = `translate(${(innerWidth - 1080 * k) / 2}px,0) scale(${k})`; }
+addEventListener('resize', fit);
+if (new URLSearchParams(location.search).has('capture')) { document.body.classList.add('capture'); fit(); renderAt(0); }
+else {
+  fit(); const seek = $('seek'); seek.max = D.total;
+  let t = 0, playing = true, last = performance.now(); const speed = 16;
+  $('f-speed').textContent = `Replay of a real build at ${X.commit}, ${speed}x speed`;
+  const paint = () => { renderAt(t, t >= D.total ? 1 : 0); seek.value = t; $('clock').textContent = fmt(t) + ' / ' + fmt(D.total); };
+  const loop = now => { if (playing) { t = Math.min(D.total, t + (now - last) / 1000 * speed); if (t >= D.total) { playing = false; $('play').textContent = 'Replay'; } paint(); } last = now; requestAnimationFrame(loop); };
+  $('play').onclick = () => { if (t >= D.total) t = 0; playing = !playing; $('play').textContent = playing ? 'Pause' : 'Play'; };
+  seek.oninput = () => { t = +seek.value; playing = false; $('play').textContent = 'Play'; paint(); };
+  document.querySelectorAll('.tile').forEach(b => b.onclick = () => {
+    const l = D.layers[+b.dataset.l], tile = l.tiles[+b.dataset.t], s = D.envs[current.env].stacks[+b.dataset.l];
+    const list = s.resources.filter(a => tile.types.some(p => a.split('.').slice(-2).join('.').startsWith(p)));
+    $('m-title').textContent = tile.name + ' in ' + D.envs[current.env].name; $('m-sub').textContent = list.length + ' Terraform resources in ' + s.id;
+    $('m-list').innerHTML = list.map(a => `<code>${a}</code>`).join(''); $('modal').classList.add('open');
+  });
+  $('m-close').onclick = () => $('modal').classList.remove('open');
+  $('modal').onclick = e => { if (e.target === $('modal')) $('modal').classList.remove('open'); };
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
