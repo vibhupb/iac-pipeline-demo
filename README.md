@@ -22,6 +22,7 @@ Terraform, GitHub Actions and the policy checks are real. The AWS APIs are emula
 |---|---|
 | Resources built | 337 (111 dev, 111 stage, 115 prod) |
 | Build from empty | 15 min 14 s |
+| Rebuild through GitHub Actions | 17 min 20 s for dev, stage and prod in order, on the latest emulator release (2026-11-25) |
 | Re-plan after build | 15 of 15 stack deployments with no changes |
 | Drift check | 15 of 15 stack deployments clean |
 | State isolation | 3 databases and roles, 6 of 6 cross-environment logins refused |
@@ -30,6 +31,8 @@ Terraform, GitHub Actions and the policy checks are real. The AWS APIs are emula
 | AWS spend | $0 |
 
 The build ran the pipeline's real promotion script on throwaway emulators and a throwaway Postgres, outside GitHub Actions. The time excludes one-time provider downloads and about 50 seconds of inventory capture.
+
+[![Build replay: three environments built from empty, sped up](images/build-replay.gif)](videos/build-replay.mp4)
 
 ## How the pipeline works
 
