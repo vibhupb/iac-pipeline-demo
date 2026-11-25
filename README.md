@@ -36,21 +36,9 @@ The build ran the pipeline's real promotion script on throwaway emulators and a 
 
 ## How the pipeline works
 
-```mermaid
-flowchart LR
-    PR[Pull request] --> Checks[Lint, security,<br/>tests, drills]
-    PR --> Plan[Plan dev and<br/>run policy gate]
-    Checks --> Merge[Review and merge]
-    Plan --> Merge
-    Merge --> Dev[Dev]
-    Dev -->|passed run| Stage[Stage]
-    Stage -->|passed run| Prod[Prod]
-    Drift[Daily drift check] -.-> Dev
-    Drift -.-> Stage
-    Drift -.-> Prod
-```
+![From pull request to prod: checks, policy gate, merge, then dev, stage and prod in order; a prod run that skipped stage is refused](images/pipeline-flow.gif)
 
-Every environment follows the same path: plan, policy gate, apply the exact saved plan, record state, smoke test.
+Every environment follows the same path: plan, policy gate, apply the exact saved plan, record state, smoke test. A daily drift check runs against dev, stage and prod.
 
 ## Central state for multiple teams
 
