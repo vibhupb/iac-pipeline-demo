@@ -4,7 +4,7 @@ A Terraform and GitHub Actions delivery pipeline, tested end to end on the free 
 
 Terraform, GitHub Actions and the policy checks are real. The AWS APIs are emulated.
 
-[![Watch the CI reel: a real pull request refused by the policy gate](images/ci-reel-poster.png)](videos/ci-reel-split-16x9.mp4)
+[![CI reel: a real pull request refused by the policy gate, then a safe change promoted](images/ci-reel.gif)](videos/ci-reel-split-16x9.mp4)
 
 **[Watch the CI reel](videos/ci-reel-split-16x9.mp4)** (78 seconds, sped up) · [phone version](videos/ci-reel-feed-4x5.mp4) · [build replay](videos/build-replay.mp4) · [case study](docs/case-study.pdf) · [carousel](docs/carousel.pdf)
 
